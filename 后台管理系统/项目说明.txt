@@ -1,0 +1,4 @@
+vueshopadmin是自己写的项目
+vue-shop-admin源码
+vueShop-api-server后台代码
+启动后台代码和安装数据库参考README.md
