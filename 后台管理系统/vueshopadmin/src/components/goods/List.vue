@@ -10,12 +10,12 @@
     <el-card>
        <el-row :gutter="20">
            <el-col :span="8">
-               <el-input placeholder="请输入内容">
-                    <el-button slot="append" icon="el-icon-search"></el-button>
+               <el-input placeholder="请输入内容" clearable @clear="getGoodsList" v-model="queryInfo.query">
+                    <el-button slot="append" @click="getGoodsList" icon="el-icon-search"></el-button>
                 </el-input>
            </el-col>
            <el-col :span="4">
-               <el-button type="primary">添加商品</el-button>
+               <el-button type="primary" @click="goAddpage">添加商品</el-button>
            </el-col>
         </el-row>  
         <el-table :data="goodsList" border stripe>
@@ -29,7 +29,7 @@
             <el-table-column label="操作" width="130px">
                 <template slot-scope="scope">
                     <el-button type="primary" icon="el-icon-edit" size="mini"></el-button>
-                    <el-button type="danger" icon="el-icon-delete" size="mini"></el-button>
+                    <el-button type="danger" icon="el-icon-delete" size="mini" @click="removeById(scope.row)"></el-button>
                 </template>
             </el-table-column>
         </el-table> 
@@ -55,7 +55,7 @@ export default {
         //查询参数对象
         query: "",
         pagenum: 1,
-        pagesize: 10
+        pagesize: 5
       },
       goodsList: [], //商品列表
       total: 0 //总数据条数
@@ -77,13 +77,32 @@ export default {
       this.goodsList = res.data.goods;
       this.total = res.data.total;
     },
-    handleSizeChange(newSize) {
+    handleSizeChange(newSize) {//分页的每页条数改变
       this.queryInfo.pagesize = newSize;
       this.getGoodsList();
     },
-    handleCurrentChange(newPage) {
+    handleCurrentChange(newPage) {//分页的页码改变
       this.queryInfo.pagenum = newPage;
       this.getGoodsList();
+    },
+    async removeById(row){//删除商品
+      const confirmResult = await this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).catch(err=>err)
+        if(confirmResult!=='confirm'){
+           return this.$message.info("你取消了删除")
+        }
+         const { data: res } = await this.$http.delete(`goods/${row.goods_id}`);
+          if (res.meta.status !== 200) {
+            return this.$message.error(res.meta.msg);
+          }
+          this.getGoodsList();
+          this.$message.success("删除商品成功")
+    },
+    goAddpage(){//添加商品
+      this.$router.push('/goods/add')
     }
   }
 };

@@ -7,9 +7,16 @@ import Element from 'element-ui'
 import axios from 'axios'
 import ZkTable from 'vue-table-with-tree-grid'
 
+import VueQuillEditor from 'vue-quill-editor'//富文本编辑器
+
 import "./assets/css/global.css"
 import 'element-ui/lib/theme-chalk/index.css';
 import './assets/fonts/iconfont.css';
+
+// 富文本编辑器样式
+import 'quill/dist/quill.core.css'
+import 'quill/dist/quill.snow.css'
+import 'quill/dist/quill.bubble.css'
 
 
 axios.defaults.baseURL = "http://127.0.0.1:8888/api/private/v1/"//配置请求的根路径
@@ -24,6 +31,8 @@ Vue.use(Element)
 Vue.config.productionTip = false
 
 Vue.component('tree-table', ZkTable)
+
+Vue.use(VueQuillEditor)//富文本编辑器
 
 Vue.filter('dateFormat', function (origiVal) {
   //dateFormat过滤器的名字，function（）过滤器的处理函数

@@ -9,6 +9,7 @@ import Roles from '@/components/power/Roles'
 import Cates from '@/components/goods/Cate'
 import Params from '@/components/goods/Params'
 import GoodsList from '@/components/goods/List'
+import Add from '@/components/goods/Add'
 
 Vue.use(Router)
 
@@ -26,9 +27,10 @@ const router = new Router({//一级路由页面都从app.vue的<router-view/>这
         { path: '/roles', component: Roles },
         { path: '/categories', component: Cates },
         { path: '/params', component: Params },
-        { path: '/goods', component: GoodsList }
-        
-      ]}
+        { path: '/goods', component: GoodsList },
+        { path: '/goods/add', component: Add }
+      ]
+    }
   ]
 })
 router.beforeEach((to, from, next) => {
