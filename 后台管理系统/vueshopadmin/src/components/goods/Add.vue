@@ -96,6 +96,7 @@
 </template>
 
 <script>
+import _ from "lodash";
 export default {
   name: "Add",
   data() {
@@ -108,8 +109,9 @@ export default {
         goods_weight: 0,
         goods_number: 0,
         goods_cat: [],
-        pics:[],//图片的数组
-        goods_introduce:'',//商品详情描述
+        pics: [], //图片的数组
+        goods_introduce: "", //商品详情描述
+        attrs: []
       },
       addFormRules: {
         //表单验证规则对象
@@ -136,13 +138,14 @@ export default {
         children: "children"
       },
       manyTableData: [], //动态参数列表数据
-      onlyTableData:[0],//静态属性列表
-      uploadURL:'http://127.0.0.1:8888/api/private/v1/upload',//上传图片的url地址必须是完整路径
-      headerObj:{//图片上传组件的headers请求头对象
-        Authorization:window.sessionStorage.getItem('token')
+      onlyTableData: [0], //静态属性列表
+      uploadURL: "http://127.0.0.1:8888/api/private/v1/upload", //上传图片的url地址必须是完整路径
+      headerObj: {
+        //图片上传组件的headers请求头对象
+        Authorization: window.sessionStorage.getItem("token")
       },
-      prebiewPath:'',//预览图片的地址
-      previewVisible:false
+      prebiewPath: "", //预览图片的地址
+      previewVisible: false
     };
   },
   created() {
@@ -193,8 +196,8 @@ export default {
             item.attr_vals.length == "0" ? [] : item.attr_vals.split(",");
         });
         this.manyTableData = res.data;
-      }else if(this.activeIndex == "2"){
-          const { data: res } = await this.$http.get(
+      } else if (this.activeIndex == "2") {
+        const { data: res } = await this.$http.get(
           `categories/${this.cateId}/attributes`,
           {
             params: {
@@ -205,35 +208,69 @@ export default {
         if (res.meta.status !== 200) {
           return this.$message.error(res.meta.msg);
         }
-        this.onlyTableData = res.data
-        
+        this.onlyTableData = res.data;
       }
     },
-    handlePreview(file){//处理图片预览效果
-      this.prebiewPath = file.response.data.url
-      this.previewVisible = true
+    handlePreview(file) {
+      //处理图片预览效果
+      this.prebiewPath = file.response.data.url;
+      this.previewVisible = true;
     },
-    handleRemove(file){//处理移除图片的操作
+    handleRemove(file) {
+      //处理移除图片的操作
       // file：将要移除的那张图片的信息
       // 1.获取将要删除图片的临时路径
-      const filePath = file.response.data.tmp_path
+      const filePath = file.response.data.tmp_path;
       // 2.从pics数组中找到这个图片对应的索引值
-      const i = this.addForm.pics.findIndex(x =>x.pic==filePath)
+      const i = this.addForm.pics.findIndex(x => x.pic == filePath);
       // 3.用数组的splice方法把图片信息对象从pics中移除
-      this.addForm.pics.splice(i,1)
-      console.log('this.addForm: ', this.addForm);
+      this.addForm.pics.splice(i, 1);
     },
-    handleSuccess(response, file, fileList){//监听图片上传成功的事件
+    handleSuccess(response, file, fileList) {
+      //监听图片上传成功的事件
       // response:服务器返回的数据
       // file:文件的信息
       // fileList:当前上传组件的文件列表
       const picinfo = {
-        pic:response.data.tmp_path
-      }
-      this.addForm.pics.push(picinfo)
+        pic: response.data.tmp_path
+      };
+      this.addForm.pics.push(picinfo);
     },
-    add(){
-      console.log(this.addForm)
+    add() {//添加商品的函数
+      this.$refs.addFormRef.validate(async valid => {
+        if (!valid) {
+          return this.$message.error("请填写必要的表单项");
+        }
+        const form = _.cloneDeep(this.addForm);
+        form.goods_cat = form.goods_cat.join(",");
+        // 根须添加商品提交的参数，我们需要处理动态参数和静态属性，以便于得到请求对应得参数格式
+        // 处理动态参数
+        this.manyTableData.forEach(item => {
+          const newInfo = {
+            attr_id: item.attr_id,
+            attr_value: item.attr_vals.join("")
+          };
+          this.addForm.attrs.push(newInfo);
+        });
+
+        // 处理动态参数
+        this.onlyTableData.forEach(item => {
+          const newInfo = {
+            attr_id: item.attr_id,
+            attr_value: item.attr_vals
+          };
+          this.addForm.attrs.push(newInfo);
+        });
+        form.attrs = this.addForm.attrs;
+
+        // 发起请求
+        const { data: res } = await this.$http.post("goods", form);
+        if (res.meta.status !== 201) {
+          return this.$message.error(res.meta.msg);
+        }
+        this.$message.success("添加商品成功");
+        this.$router.push("/goods");
+      });
     }
   },
   computed: {
@@ -248,13 +285,13 @@ export default {
 </script>
 
 <style scoped>
-.el-checkbox{
-  margin: 0 10px 0 0!important;
+.el-checkbox {
+  margin: 0 10px 0 0 !important;
 }
-.previewImg{
-  width:100%
+.previewImg {
+  width: 100%;
 }
-.btnAdd{
+.btnAdd {
   margin-top: 15px;
 }
 </style>
