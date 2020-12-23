@@ -38,12 +38,12 @@
          </el-table-column>
          <el-table-column label="操作">
            <template>
-             <el-button size="mini" type="primary" icon="el-icon-edit"></el-button>
-             <el-button size="mini" type="success" icon="el-icon-location"></el-button>
+             <el-button size="mini" type="primary" icon="el-icon-edit" @click="showBox"></el-button>
+             <el-button size="mini" type="success" icon="el-icon-location" @click="showProgressBox"></el-button>
            </template>
          </el-table-column>
        </el-table>
-        <!-- <el-pagination
+         <el-pagination
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :current-page="queryInfo.pagenum"
@@ -51,12 +51,46 @@
         :page-size="queryInfo.pagesize"
         layout="sizes, prev, pager, next, jumper"
         :total="total" background>
-        </el-pagination>  -->
+        </el-pagination>   
     </el-card>
+    <!-- 修改地址的对话框 -->
+    <el-dialog
+      title="修改地址"
+      :visible.sync="addressVisible"
+      width="50%"
+      @close="addressDialogClosed">
+      <el-form :model="addressForm" :rules="addressFormRules" ref="addressFormRef" label-width="100px">
+        <el-form-item label="省市区/县" prop="address1">
+          <el-cascader :options="cityData" v-model="addressForm.address1"></el-cascader>
+        </el-form-item>
+        <el-form-item label="详细地址" prop="address2">
+          <el-input v-model="addressForm.address2"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="addressVisible = false">取 消</el-button>
+        <el-button type="primary" @click="addressVisible = false">确 定</el-button>
+      </span>
+    </el-dialog>
+    <!-- 展示物流进度的对话框 -->
+    <el-dialog
+      title="物流进度"
+      :visible.sync="progressVisible"
+      width="50%">
+      <el-timeline>
+        <el-timeline-item
+          v-for="(activity, index) in progressInfo"
+          :key="index"
+          :timestamp="activity.time">
+          {{activity.context}}
+        </el-timeline-item>
+      </el-timeline>
+    </el-dialog>
   </div>
 </template>
 
 <script>
+import cityData from "./citydata.js";
 export default {
   name: "Order",
   data() {
@@ -67,22 +101,121 @@ export default {
         pagesize: 10
       },
       total: 0, //总数据条数
-      orderList: [] //数据列表
+      orderList: [], //数据列表
+      addressVisible: false, //展示对话框的显示与隐藏
+      addressForm: {
+        //表单数据对象
+        address1: [],
+        address2: ""
+      },
+      addressFormRules: {
+        //表单验证规则
+        address1: [
+          { required: true, message: "请选择省市区", trigger: "blur" }
+        ],
+        address2: [
+          { required: true, message: "请输入详细地址", trigger: "blur" }
+        ]
+      },
+      cityData, //城市数据
+      progressVisible: false, //物流进度对话框的显示与隐藏
+      orderList:[],
+      progressInfo:[
+      {
+        "time": "2018-05-10 09:39:00",
+        "ftime": "2018-05-10 09:39:00",
+        "context": "已签收,感谢使用顺丰,期待再次为您服务",
+        "location": ""
+      },
+      {
+        "time": "2018-05-10 08:23:00",
+        "ftime": "2018-05-10 08:23:00",
+        "context": "[北京市]北京海淀育新小区营业点派件员 顺丰速运 95338正在为您派件",
+        "location": ""
+      },
+      {
+        "time": "2018-05-10 07:32:00",
+        "ftime": "2018-05-10 07:32:00",
+        "context": "快件到达 [北京海淀育新小区营业点]",
+        "location": ""
+      },
+      {
+        "time": "2018-05-10 02:03:00",
+        "ftime": "2018-05-10 02:03:00",
+        "context": "快件在[北京顺义集散中心]已装车,准备发往 [北京海淀育新小区营业点]",
+        "location": ""
+      },
+      {
+        "time": "2018-05-09 23:05:00",
+        "ftime": "2018-05-09 23:05:00",
+        "context": "快件到达 [北京顺义集散中心]",
+        "location": ""
+      },
+      {
+        "time": "2018-05-09 21:21:00",
+        "ftime": "2018-05-09 21:21:00",
+        "context": "快件在[北京宝胜营业点]已装车,准备发往 [北京顺义集散中心]",
+        "location": ""
+      },
+      {
+        "time": "2018-05-09 13:07:00",
+        "ftime": "2018-05-09 13:07:00",
+        "context": "顺丰速运 已收取快件",
+        "location": ""
+      },
+      {
+        "time": "2018-05-09 12:25:03",
+        "ftime": "2018-05-09 12:25:03",
+        "context": "卖家发货",
+        "location": ""
+      },
+      {
+        "time": "2018-05-09 12:22:24",
+        "ftime": "2018-05-09 12:22:24",
+        "context": "您的订单将由HLA（北京海淀区清河中街店）门店安排发货。",
+        "location": ""
+      },
+      {
+        "time": "2018-05-08 21:36:04",
+        "ftime": "2018-05-08 21:36:04",
+        "context": "商品已经下单",
+        "location": ""
+      }
+    ],//物理进度数据
     };
   },
   created() {
     this.getOrderList();
   },
   methods: {
-     handleSizeChange(newSize) {//分页的每页条数改变
+    handleSizeChange(newSize) {
+      //分页的每页条数改变
       this.queryInfo.pagesize = newSize;
       this.getOrderList();
     },
-    handleCurrentChange(newPage) {//分页的页码改变
+    handleCurrentChange(newPage) {
+      //分页的页码改变
       this.queryInfo.pagenum = newPage;
       this.getOrderList();
     },
+    showBox() {
+      //展示修改地址的对话框
+      this.addressVisible = true;
+    },
+    addressDialogClosed() {
+      this.$refs.addressFormRef.resetFields();
+    },
+    async showProgressBox() {
+      //物流进度数据接口
+      // const { data: res } = await this.$http.get("/kuaidi/1106975712662");
+      // if (res.meta.status !== 200) {
+      //   return this.$message.error(res.meta.msg);
+      // }
+      // this.progressInfo = res.data;
+      this.progressVisible = true;
+    },
     async getOrderList() {
+      //订单列表数据接口
       const { data: res } = await this.$http.get("orders", {
         params: this.queryInfo
       });
@@ -97,4 +230,7 @@ export default {
 </script>
 
 <style scoped>
+.el-cascader {
+  width: 100%;
+}
 </style>
